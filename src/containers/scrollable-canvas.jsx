@@ -5,7 +5,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import ScrollableCanvasComponent from '../components/scrollable-canvas/scrollable-canvas.jsx';
 
-import {ART_BOARD_WIDTH, ART_BOARD_HEIGHT, clampViewBounds, pan, zoomOnFixedPoint} from '../helper/view';
+import {clampViewBounds, pan, zoomOnFixedPoint, getWorkspaceBounds} from '../helper/view';
 import {updateViewBounds} from '../reducers/view-bounds';
 import {redrawSelectionBox} from '../reducers/selected-items';
 
@@ -45,7 +45,7 @@ class ScrollableCanvas extends React.Component {
         this.initialMouseX = getEventXY(event).x;
         this.initialScreenX = paper.view.matrix.tx;
         window.addEventListener('mousemove', this.handleHorizontalScrollbarMouseMove);
-        window.addEventListener('touchmove', this.handleHorizontalScrollbarMouseMove);
+        window.addEventListener('touchmove', this.handleHorizontalScrollbarMouseMove, {passive: false});
         window.addEventListener('mouseup', this.handleHorizontalScrollbarMouseUp);
         window.addEventListener('touchend', this.handleHorizontalScrollbarMouseUp);
         event.preventDefault();
@@ -59,7 +59,7 @@ class ScrollableCanvas extends React.Component {
     }
     handleHorizontalScrollbarMouseUp () {
         window.removeEventListener('mousemove', this.handleHorizontalScrollbarMouseMove);
-        window.removeEventListener('touchmove', this.handleHorizontalScrollbarMouseMove);
+        window.removeEventListener('touchmove', this.handleHorizontalScrollbarMouseMove, {passive: false});
         window.removeEventListener('mouseup', this.handleHorizontalScrollbarMouseUp);
         window.removeEventListener('touchend', this.handleHorizontalScrollbarMouseUp);
         this.initialMouseX = null;
@@ -70,7 +70,7 @@ class ScrollableCanvas extends React.Component {
         this.initialMouseY = getEventXY(event).y;
         this.initialScreenY = paper.view.matrix.ty;
         window.addEventListener('mousemove', this.handleVerticalScrollbarMouseMove);
-        window.addEventListener('touchmove', this.handleVerticalScrollbarMouseMove);
+        window.addEventListener('touchmove', this.handleVerticalScrollbarMouseMove, {passive: false});
         window.addEventListener('mouseup', this.handleVerticalScrollbarMouseUp);
         window.addEventListener('touchend', this.handleVerticalScrollbarMouseUp);
         event.preventDefault();
@@ -84,7 +84,7 @@ class ScrollableCanvas extends React.Component {
     }
     handleVerticalScrollbarMouseUp (event) {
         window.removeEventListener('mousemove', this.handleVerticalScrollbarMouseMove);
-        window.removeEventListener('touchmove', this.handleVerticalScrollbarMouseMove);
+        window.removeEventListener('touchmove', this.handleVerticalScrollbarMouseMove, {passive: false});
         window.removeEventListener('mouseup', this.handleVerticalScrollbarMouseUp);
         window.removeEventListener('touchend', this.handleVerticalScrollbarMouseUp);
         this.initialMouseY = null;
@@ -132,11 +132,12 @@ class ScrollableCanvas extends React.Component {
         let topPercent = 0;
         let leftPercent = 0;
         if (paper.project) {
+            const bounds = getWorkspaceBounds();
             const {x, y, width, height} = paper.view.bounds;
-            widthPercent = Math.min(100, 100 * width / ART_BOARD_WIDTH);
-            heightPercent = Math.min(100, 100 * height / ART_BOARD_HEIGHT);
-            const centerX = (x + (width / 2)) / ART_BOARD_WIDTH;
-            const centerY = (y + (height / 2)) / ART_BOARD_HEIGHT;
+            widthPercent = Math.min(100, 100 * width / bounds.width);
+            heightPercent = Math.min(100, 100 * height / bounds.height);
+            const centerX = (x + (width / 2) - bounds.x) / bounds.width;
+            const centerY = (y + (height / 2) - bounds.y) / bounds.height;
             topPercent = Math.max(0, (100 * centerY) - (heightPercent / 2));
             leftPercent = Math.max(0, (100 * centerX) - (widthPercent / 2));
         }
